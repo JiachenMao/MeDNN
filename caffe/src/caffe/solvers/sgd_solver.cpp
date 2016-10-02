@@ -431,13 +431,17 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
   	             this->net_->params_breadth_decay();
   const vector<float>& net_params_kernel_shape_decay_multi =
   	             this->net_->params_kernel_shape_decay();
+  const vector<float>& net_params_special_shape_decay_multi =
+  	             this->net_->params_special_shape_decay();
   const vector<BlockGroupLassoSpec> net_params_block_group_lasso =
     	             this->net_->params_block_group_lasso()[param_id];
   Dtype local_breadth_decay = this->param_.breadth_decay() * net_params_breadth_decay_multi[param_id];
   Dtype local_kernel_shape_decay = this->param_.kernel_shape_decay() * net_params_kernel_shape_decay_multi[param_id];
+  Dtype local_special_shape_decay = this->param_.special_shape_decay() * net_params_special_shape_decay_multi[param_id];
   Dtype regularization_term = Dtype(0);
   bool if_learn_kernel_shape = local_kernel_shape_decay!=0;// && (net_params[param_id]->num_axes()==4);
   bool if_learn_breadth = local_breadth_decay!=0;// && (net_params[param_id]->num_axes()==4 );
+  bool if_learn_special_shape = local_special_shape_decay!=0;
   int equivalent_ch = net_params[param_id]->count()/net_params[param_id]->shape(0);
   switch (Caffe::mode()) {
   case Caffe::CPU: {
@@ -511,6 +515,7 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 #ifndef CPU_ONLY
 	//group lasso along columns (channels)
     if (if_learn_kernel_shape) {
+    	LOG(INFO) << "mjc: group lasso along columns (channels)";
     	int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
     	for (int g=0;g<net_param_groups[param_id];g++){
     		int offset = g*group_size*equivalent_ch;
@@ -531,6 +536,7 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 
     //group lasso along rows (kernels)
     if (if_learn_breadth) {
+    	LOG(INFO) << "mjc: group lasso along rows (kernels)";
 		int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		for (int g=0;g<net_param_groups[param_id];g++){
 			int offset = g*group_size*equivalent_ch;
@@ -549,9 +555,75 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 					net_params[param_id]->mutable_gpu_diff());
 	}
 
+	//shape group lasso added by mjc------------------------------------
+	ostringstream msg;
+	msg << "mjc: net_params_block_group_lasso: " << net_params_block_group_lasso.size()<<"\n";
+	msg << "mjc: net_params[param_id] count: " << net_params[param_id]->count()<<"\n";
+	msg << "mjc: net_params[param_id] shape: ";
+	for(int i =0;i<net_params[param_id]->shape().size();++i)
+	{
+		msg <<" "<< net_params[param_id]->shape(i);
+	}	
+	msg <<"\n";
+	msg <<"mjc net_param_groups[param_id] " << net_param_groups[param_id]<<"\n";
+	//group lasso along rows and column
+    if (if_learn_special_shape) {
+    	LOG(INFO) << "mjc: group lasso along rows and column in special way(jump)";
+		// int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
+		// for (int g=0;g<net_param_groups[param_id];g++){
+		// 	int offset = g*group_size*equivalent_ch;
+		// 	caffe_gpu_bar_group_lasso(group_size,
+		// 			equivalent_ch,
+		// 			net_params[param_id]->gpu_data()+offset,
+		// 			temp_[param_id]->mutable_gpu_data()+offset, false);//get the denominator of each w
+		// 	Dtype term;
+		// 	caffe_gpu_asum(group_size,temp_[param_id]->gpu_data()+offset,&term,equivalent_ch);
+		// 	regularization_term += term*local_breadth_decay;
+		// }
+		// caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
+		// caffe_gpu_axpy(net_params[param_id]->count(),
+		// 			local_breadth_decay,
+		// 			temp_[param_id]->gpu_data(),
+		// 			net_params[param_id]->mutable_gpu_diff());
+	}
+	//shape group lasso added by mjc------------------------------------
+
+
+/*
+	template <>
+void caffe_gpu_block_group_lasso<float>(const int n, const int c,
+		const int blk_size_n, const int blk_size_c,
+		const float *x, float* y){
+	CHECK_LE(blk_size_n,n);
+	CHECK_LE(blk_size_c,c);
+	CHECK_EQ(n%blk_size_n,0);
+	CHECK_EQ(c%blk_size_c,0);
+	int threads_per_block = Caffe::get_threads_per_block();
+	//int shared_mem_bytes_per_block = Caffe::get_shared_mem_bytes_per_block();
+	const int blk_num_n = (n+blk_size_n-1)/blk_size_n;
+	const int blk_num_c = (c+blk_size_c-1)/blk_size_c;
+	const int blk_size = blk_size_n*blk_size_c;
+	//const int sharedmem_bytes = blk_size*sizeof(float)*2;
+	//CHECK_GE(shared_mem_bytes_per_block,sharedmem_bytes);
+	dim3 block(blk_num_c,blk_num_n);
+	dim3 thread(blk_size>threads_per_block?threads_per_block:blk_size, 1);
+	//LOG(INFO)<< "blk_size_n:" << blk_size_n
+	//		<< " blk_size_c:" << blk_size_c
+	//		<< " blk_num_n:" << blk_num_n
+	//		<< " blk_num_c:" << blk_num_c;
+	//block_group_lasso_kernel<<<block,thread,sharedmem_bytes>>>(n, c,x,y);
+	block_group_lasso_kernel<<<block,thread>>>(n, c,x,y);
+	CUDA_POST_KERNEL_CHECK;
+}
+*/
+
     for (int blk_idx=0;blk_idx<net_params_block_group_lasso.size();blk_idx++){
-    	int xdimen = net_params_block_group_lasso[blk_idx].xdimen();
-    	int ydimen = net_params_block_group_lasso[blk_idx].ydimen();
+    	//LOG(INFO) << "mjc: group lasso along blocks";
+    	int xdimen = net_params_block_group_lasso[blk_idx].xdimen(); //x of blocksize
+    	int ydimen = net_params_block_group_lasso[blk_idx].ydimen(); //y of blocksize
+    	// msg << "xdimen"<<xdimen;
+    	// msg << "ydimen"<<ydimen;
+    	// msg << "equivalent_ch" <<equivalent_ch; // filter size: channel*height*size
     	Dtype block_decay_mult = net_params_block_group_lasso[blk_idx].block_decay_mult();
     	Dtype local_block_group_decay = block_decay_mult*this->param_.block_group_decay();
     	if(local_block_group_decay){
@@ -573,6 +645,8 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 						net_params[param_id]->mutable_gpu_diff());
     	}
     }
+
+    LOG(INFO) << msg.str();
 #else
     NO_GPU;
 #endif

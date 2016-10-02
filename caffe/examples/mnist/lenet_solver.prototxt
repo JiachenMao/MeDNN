@@ -23,4 +23,15 @@ snapshot: 5000
 snapshot_prefix: "lenet_mjc"
 # solver mode: CPU or GPU
 solver_mode: GPU
-block_group_decay: 0.001
+
+#block_group_decay: 0.001
+#group lasso along blocks
+
+#breadth_decay: 0.001
+#group lasso along rows (kernel-wise)
+
+kernel_shape_decay: 0.001
+#group lasso along columns (channel-wise)
+
+special_shape_decay: 0.001
+#group lasso along columns and rows

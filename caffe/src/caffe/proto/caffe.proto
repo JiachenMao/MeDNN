@@ -98,7 +98,7 @@ message NetParameter {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 44 (last added: block_group_decay)
+// SolverParameter next available ID: 45 (last added: special_shape_decay)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
   // Specifying the train and test networks
@@ -231,6 +231,7 @@ message SolverParameter {
   optional float breadth_decay = 41 [default = 0.0]; // The group weight decay on each kernel.
   optional float kernel_shape_decay = 42 [default = 0.0]; // The group weight decay on all elemements having the same coordinate in each kernel
   optional float block_group_decay = 43 [default = 0.0]; // The group weight decay on all elemements each block
+  optional float special_shape_decay = 44 [default = 0.0]; // The group weight decay on all elemements having the same coordinate in each kernel
 
   // DEPRECATED: old solver enum types, use string instead
   enum SolverType {
@@ -309,6 +310,7 @@ message ParamSpec {
   //The multiplier on the global group lasso weight decay for this parameter.
   optional float breadth_decay_mult = 5 [default = 0.0];
   optional float kernel_shape_decay_mult = 6 [default = 0.0];
+  optional float special_shape_decay_mult = 10 [default = 0.0];
   
   repeated BlockGroupLassoSpec block_group_lasso = 7;
   

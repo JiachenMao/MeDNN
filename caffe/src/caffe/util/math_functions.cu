@@ -540,6 +540,11 @@ void caffe_gpu_bar_group_lasso<double>(const int n, const int c, const double* x
 	CUDA_POST_KERNEL_CHECK;
 }
 
+//function for shape group lasso added by mjc
+//temp<>
+//void caffe_gpu_shape_group_lasso(const int )
+//function for shape group lasso added by mjc
+
 template <>
 void caffe_gpu_block_group_lasso<float>(const int n, const int c,
 		const int blk_size_n, const int blk_size_c,
