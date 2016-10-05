@@ -515,7 +515,7 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 #ifndef CPU_ONLY
 	//group lasso along columns (channels)
     if (if_learn_kernel_shape) {
-    	LOG(INFO) << "mjc: group lasso along columns (channels)";
+    	//LOG(INFO) << "mjc: group lasso along columns (channels)";
     	int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
     	for (int g=0;g<net_param_groups[param_id];g++){
     		int offset = g*group_size*equivalent_ch;
@@ -536,7 +536,7 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 
     //group lasso along rows (kernels)
     if (if_learn_breadth) {
-    	LOG(INFO) << "mjc: group lasso along rows (kernels)";
+    	//LOG(INFO) << "mjc: group lasso along rows (kernels)";
 		int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		for (int g=0;g<net_param_groups[param_id];g++){
 			int offset = g*group_size*equivalent_ch;
@@ -556,66 +556,57 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 	}
 
 	//shape group lasso added by mjc------------------------------------
-	ostringstream msg;
-	msg << "mjc: net_params_block_group_lasso: " << net_params_block_group_lasso.size()<<"\n";
-	msg << "mjc: net_params[param_id] count: " << net_params[param_id]->count()<<"\n";
-	msg << "mjc: net_params[param_id] shape: ";
-	for(int i =0;i<net_params[param_id]->shape().size();++i)
-	{
-		msg <<" "<< net_params[param_id]->shape(i);
-	}	
-	msg <<"\n";
-	msg <<"mjc net_param_groups[param_id] " << net_param_groups[param_id]<<"\n";
+	// ostringstream msg;
+	// msg << "mjc: net_params_block_group_lasso: " << net_params_block_group_lasso.size()<<"\n";
+	// msg << "mjc: net_params[param_id] count: " << net_params[param_id]->count()<<"\n";
+	// msg << "mjc: net_params[param_id] shape: ";
+	// for(int i =0;i<net_params[param_id]->shape().size();++i)
+	// {
+	// 	msg <<" "<< net_params[param_id]->shape(i);
+	// }	
+	// msg <<"\n";
+	// msg <<"mjc net_param_groups[param_id] " << net_param_groups[param_id]<<"\n";
 	//group lasso along rows and column
     if (if_learn_special_shape) {
-    	LOG(INFO) << "mjc: group lasso along rows and column in special way(jump)";
-		// int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
+  //   	LOG(INFO) << "mjc: group lasso along rows and column in special way(jump) (horizontal)";
+		int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
+		//for (int g=0;g<net_param_groups[param_id];g++){
+			//int offset = g*group_size*equivalent_ch;
+		caffe_gpu_special_shape_group_lasso(group_size,
+				equivalent_ch,
+				net_params[param_id]->gpu_data(),
+				temp_[param_id]->mutable_gpu_data(), false);//get the group lasso denominator of each w, 'false' means horizontal.
+		Dtype term;
+		caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data(),&term);
+		regularization_term += (term/3)*local_special_shape_decay;
+		//}
+		caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
+		caffe_gpu_axpy(net_params[param_id]->count(),
+					local_special_shape_decay,
+					temp_[param_id]->gpu_data(),
+					net_params[param_id]->mutable_gpu_diff());
+
+		//LOG(INFO) << "mjc: group lasso along rows and column in special way(jump) (vertical)";
+		//int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		// for (int g=0;g<net_param_groups[param_id];g++){
 		// 	int offset = g*group_size*equivalent_ch;
-		// 	caffe_gpu_bar_group_lasso(group_size,
-		// 			equivalent_ch,
-		// 			net_params[param_id]->gpu_data()+offset,
-		// 			temp_[param_id]->mutable_gpu_data()+offset, false);//get the denominator of each w
-		// 	Dtype term;
-		// 	caffe_gpu_asum(group_size,temp_[param_id]->gpu_data()+offset,&term,equivalent_ch);
-		// 	regularization_term += term*local_breadth_decay;
+		caffe_gpu_special_shape_group_lasso(group_size,
+				equivalent_ch,
+				net_params[param_id]->gpu_data(),
+				temp_[param_id]->mutable_gpu_data(), true);//get the denominator of each w, 'true' means vertical
+		Dtype term2;
+		caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data(),&term2);
+		regularization_term += (term2/3)*local_special_shape_decay;
 		// }
-		// caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
-		// caffe_gpu_axpy(net_params[param_id]->count(),
-		// 			local_breadth_decay,
-		// 			temp_[param_id]->gpu_data(),
-		// 			net_params[param_id]->mutable_gpu_diff());
+		caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
+		caffe_gpu_axpy(net_params[param_id]->count(),
+					local_special_shape_decay,
+					temp_[param_id]->gpu_data(),
+					net_params[param_id]->mutable_gpu_diff());
+
+
 	}
 	//shape group lasso added by mjc------------------------------------
-
-
-/*
-	template <>
-void caffe_gpu_block_group_lasso<float>(const int n, const int c,
-		const int blk_size_n, const int blk_size_c,
-		const float *x, float* y){
-	CHECK_LE(blk_size_n,n);
-	CHECK_LE(blk_size_c,c);
-	CHECK_EQ(n%blk_size_n,0);
-	CHECK_EQ(c%blk_size_c,0);
-	int threads_per_block = Caffe::get_threads_per_block();
-	//int shared_mem_bytes_per_block = Caffe::get_shared_mem_bytes_per_block();
-	const int blk_num_n = (n+blk_size_n-1)/blk_size_n;
-	const int blk_num_c = (c+blk_size_c-1)/blk_size_c;
-	const int blk_size = blk_size_n*blk_size_c;
-	//const int sharedmem_bytes = blk_size*sizeof(float)*2;
-	//CHECK_GE(shared_mem_bytes_per_block,sharedmem_bytes);
-	dim3 block(blk_num_c,blk_num_n);
-	dim3 thread(blk_size>threads_per_block?threads_per_block:blk_size, 1);
-	//LOG(INFO)<< "blk_size_n:" << blk_size_n
-	//		<< " blk_size_c:" << blk_size_c
-	//		<< " blk_num_n:" << blk_num_n
-	//		<< " blk_num_c:" << blk_num_c;
-	//block_group_lasso_kernel<<<block,thread,sharedmem_bytes>>>(n, c,x,y);
-	block_group_lasso_kernel<<<block,thread>>>(n, c,x,y);
-	CUDA_POST_KERNEL_CHECK;
-}
-*/
 
     for (int blk_idx=0;blk_idx<net_params_block_group_lasso.size();blk_idx++){
     	//LOG(INFO) << "mjc: group lasso along blocks";
@@ -646,7 +637,7 @@ void caffe_gpu_block_group_lasso<float>(const int n, const int c,
     	}
     }
 
-    LOG(INFO) << msg.str();
+    // LOG(INFO) << msg.str();
 #else
     NO_GPU;
 #endif
