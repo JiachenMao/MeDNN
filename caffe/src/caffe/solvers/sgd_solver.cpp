@@ -110,31 +110,23 @@ void SGDSolver<Dtype>::ApplyUpdate() {
 	//	  this->net_->params_weight_decay();
 	//Dtype weight_decay = this->param_.weight_decay();
 	ostringstream sparsity_msg_stream;
-	sparsity_msg_stream << "    Element Sparsity %: \n";
+	/*sparsity_msg_stream << "    Element Sparsity %: \n";
 	for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
-		//Dtype local_decay = weight_decay * net_params_weight_decay[param_id];
 		sparsity_msg_stream << GetSparsity(param_id) <<"\t";
-		//if(local_decay) sparsity_msg_stream << GetSparsity(param_id) <<"\t";
-		//else sparsity_msg_stream << -1 <<"\t";
 	}
 	LOG(INFO) << sparsity_msg_stream.str();
-
+  
 	sparsity_msg_stream.str("");
 	sparsity_msg_stream << "     Column Sparsity %: \n";
 	for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
-		//Dtype local_decay = this->param_.kernel_shape_decay() * this->net_->params_kernel_shape_decay()[param_id];
 		sparsity_msg_stream << GetGroupSparsity(param_id, true) <<"\t";
-		//if(local_decay) sparsity_msg_stream << GetGroupSparsity(param_id, true) <<"\t";
-		//else sparsity_msg_stream << -1 <<"\t";
 	}
 	LOG(INFO) << sparsity_msg_stream.str();
-
+  
 	sparsity_msg_stream.str("");
 	sparsity_msg_stream << "        Row Sparsity %: \n";
 	for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
 		sparsity_msg_stream << GetGroupSparsity(param_id, false) <<"\t";
-		//if(local_decay) sparsity_msg_stream << GetGroupSparsity(param_id, false) <<"\t";
-		//else sparsity_msg_stream << -1 <<"\t";
 	}
 	LOG(INFO) << sparsity_msg_stream.str();
 
@@ -150,10 +142,40 @@ void SGDSolver<Dtype>::ApplyUpdate() {
 		}
 		sparsity_msg_stream << "\t";
 	}
-	LOG(INFO) << sparsity_msg_stream.str();
+  */
+
+  // added by mjc: used to print the transmission decrease and computation decrease
+  
+  sparsity_msg_stream<<"\n-------------\n";
+  sparsity_msg_stream << "Element Sparsity %: \n";
+  for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
+    sparsity_msg_stream << GetSparsity(param_id) <<"\t";
+  }
+  sparsity_msg_stream<<"\n-------------\n";
+  sparsity_msg_stream << "Row Sparsity (the ratio of decreased filters) %: \n"; 
+  for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
+    sparsity_msg_stream << GetGroupSparsity(param_id, false) <<"\t";
+  }
+  sparsity_msg_stream<<"\n-------------\n";
+  sparsity_msg_stream << "Column Sparsity (the ratio of decreased standalone position of all the filters) %: \n"; 
+  for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
+    sparsity_msg_stream << GetGroupSparsity(param_id, true) <<"\t";
+  }
+  sparsity_msg_stream<<"\n-------------\n";
+  sparsity_msg_stream << "Special Sparsity (the ratio of decreased transmission data of all the filters) %: \n"; 
+  for (int param_id = 0; param_id < this->net_->learnable_params().size(); ++param_id) {
+    int filter_side_size = 3;
+    sparsity_msg_stream << GetGroupSparsity(param_id, filter_side_size) <<"\t";
+/*
+    const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+    int column = net_params[param_id]->count()/net_params[param_id]->shape(0);
+    int row = net_params[param_id]->shape(0);
+    sparsity_msg_stream<<"row"<<row<<"column"<<column<<"-=-=-=-=-";
+    */
 
   }
-
+  LOG(INFO) << sparsity_msg_stream.str();
+  }
   ClipGradients();
   Solver<Dtype>::total_regularization_term_ = Dtype(0);
   for (int param_id = 0; param_id < this->net_->learnable_params().size();
@@ -384,6 +406,7 @@ Dtype SGDSolver<Dtype>::GetSparsity(int param_id) {
   return sparsity;
 }
 
+
 template <typename Dtype>
 Dtype SGDSolver<Dtype>::GetGroupSparsity(int param_id, bool dimen) {
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
@@ -421,6 +444,67 @@ Dtype SGDSolver<Dtype>::GetGroupSparsity(int param_id, int ydimen,int xdimen) {
 	  }
   }
   return (Dtype)(100*count)/(Dtype)(block_num_x*block_num_y);
+}
+
+// added by mjc, test the ratio of the transmission decrease
+template <typename Dtype>
+Dtype SGDSolver<Dtype>::GetGroupSparsity(int param_id, int filter_side_size) {
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  int column = net_params[param_id]->count()/net_params[param_id]->shape(0);
+  int row = net_params[param_id]->shape(0);
+  int index = 0;
+  int total_lines = 0;
+  int all_zero_lines = 0;
+  while(index<(column-1)){
+    bool all_zero_123 = true;
+    bool all_zero_789 = true;  //flag to exam the sparsity of different positions
+    bool all_zero_147 = true;
+    bool all_zero_369 = true;
+    for(int i = 0; i < row; ++i){   //should be zero for all the filters
+      int idx1 = index+i*column;
+      int idx2 = index+i*column;
+      int idx3 = index+i*column;
+      if(all_zero_123==false&&all_zero_789==false&&all_zero_147==false&&all_zero_369==false){
+        break;
+      }
+      if(all_zero_123==true){
+        if(net_params[param_id]->cpu_data()[idx1+1]!=0||net_params[param_id]->cpu_data()[idx2+2]!=0||net_params[param_id]->cpu_data()[idx3+3]!=0){
+          all_zero_123 = false;
+        }
+      }
+      if(all_zero_789==true){
+        if(net_params[param_id]->cpu_data()[idx1+7]!=0||net_params[param_id]->cpu_data()[idx2+8]!=0||net_params[param_id]->cpu_data()[idx3+9]!=0){
+          all_zero_789 = false;
+        }
+      }
+      if(all_zero_147==true){
+        if(net_params[param_id]->cpu_data()[idx1+1]!=0||net_params[param_id]->cpu_data()[idx2+4]!=0||net_params[param_id]->cpu_data()[idx3+7]!=0){
+          all_zero_147 = false;
+        }
+      }
+      if(all_zero_369==true){
+        if(net_params[param_id]->cpu_data()[idx1+3]!=0||net_params[param_id]->cpu_data()[idx2+6]!=0||net_params[param_id]->cpu_data()[idx3+9]!=0){
+          all_zero_369 = false;
+        }
+      }
+    }
+    // gather the results
+    if(all_zero_123 == true){
+      all_zero_lines++;
+    }
+    if(all_zero_789 == true){
+      all_zero_lines++;
+    }
+    if(all_zero_147 == true){
+      all_zero_lines++;
+    }
+    if(all_zero_369 == true){
+      all_zero_lines++;
+    }
+    total_lines+=4;
+    index+=filter_side_size*filter_side_size;
+  }
+  return Dtype(100)*Dtype(all_zero_lines)/Dtype(total_lines);
 }
 
 template <typename Dtype>

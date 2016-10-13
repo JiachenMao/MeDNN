@@ -20,7 +20,7 @@ display: 100
 max_iter: 10000
 # snapshot intermediate results
 snapshot: 5000
-snapshot_prefix: "lenet_mjc"
+snapshot_prefix: "./mjc_itration_data/lenet_mjc"
 # solver mode: CPU or GPU
 solver_mode: GPU
 
