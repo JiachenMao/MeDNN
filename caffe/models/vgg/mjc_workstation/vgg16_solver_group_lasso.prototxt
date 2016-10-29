@@ -1,7 +1,7 @@
-net: "./VGG_ILSVRC_16_layers.prototxt"
+net: "./vgg16_group_lasso.prototxt"
 
 
-test_iter: 209
+test_iter: 2
 test_interval: 834
 base_lr: 0.01
 display: 104
@@ -12,7 +12,7 @@ momentum: 0.9
 weight_decay: 0.0001
 stepsize: 8257
 snapshot: 834
-snapshot_prefix: "snapshot"
+snapshot_prefix: "./models/snapshot"
 solver_mode: GPU
 solver_type: SGD
 iter_size: 2

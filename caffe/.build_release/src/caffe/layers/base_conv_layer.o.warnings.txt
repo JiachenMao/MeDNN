@@ -1,0 +1,6 @@
+src/caffe/layers/base_conv_layer.cpp: In member function ‘void caffe::BaseConvolutionLayer<Dtype>::forward_cpu_gemm(const Dtype*, const Dtype*, Dtype*, int, bool) [with Dtype = float]’:
+src/caffe/layers/base_conv_layer.cpp:688:5: warning: ‘input_padded’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+     delete[] input_padded;
+     ^
+src/caffe/layers/base_conv_layer.cpp: In member function ‘void caffe::BaseConvolutionLayer<Dtype>::forward_cpu_gemm(const Dtype*, const Dtype*, Dtype*, int, bool) [with Dtype = double]’:
+src/caffe/layers/base_conv_layer.cpp:688:5: warning: ‘input_padded’ may be used uninitialized in this function [-Wmaybe-uninitialized]

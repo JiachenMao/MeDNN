@@ -14,7 +14,7 @@ layers {
  }
  data_param {
     source: "/home/public/ImageNet12/ilsvrc12_train_lmdb"
-    batch_size: 64
+    batch_size: 1
     backend: LMDB
   }
   top: "data"
@@ -35,7 +35,7 @@ layers {
  }
  data_param {
     source: "/home/public/ImageNet12/ilsvrc12_val_lmdb"
-    batch_size: 50
+    batch_size: 1
     backend: LMDB
   }
   top: "data"

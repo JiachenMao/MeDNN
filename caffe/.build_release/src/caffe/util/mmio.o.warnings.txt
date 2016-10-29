@@ -1,0 +1,41 @@
+src/caffe/util/mmio.cpp: In function ‘char* mm_typecode_to_str(char*)’:
+src/caffe/util/mmio.cpp:464:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[0] = MM_MTX_STR;
+                  ^
+src/caffe/util/mmio.cpp:470:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[1] = MM_SPARSE_STR;
+                  ^
+src/caffe/util/mmio.cpp:473:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[1] = MM_DENSE_STR;
+                  ^
+src/caffe/util/mmio.cpp:479:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[2] = MM_REAL_STR;
+                  ^
+src/caffe/util/mmio.cpp:482:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[2] = MM_COMPLEX_STR;
+                  ^
+src/caffe/util/mmio.cpp:485:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[2] = MM_PATTERN_STR;
+                  ^
+src/caffe/util/mmio.cpp:488:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[2] = MM_INT_STR;
+                  ^
+src/caffe/util/mmio.cpp:495:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[3] = MM_GENERAL_STR;
+                  ^
+src/caffe/util/mmio.cpp:498:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[3] = MM_SYMM_STR;
+                  ^
+src/caffe/util/mmio.cpp:501:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[3] = MM_HERM_STR;
+                  ^
+src/caffe/util/mmio.cpp:504:18: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         types[3] = MM_SKEW_STR;
+                  ^
+src/caffe/util/mmio.cpp:460:9: warning: variable ‘error’ set but not used [-Wunused-but-set-variable]
+     int error =0;
+         ^
+src/caffe/util/mmio.cpp: In function ‘int mm_read_unsymmetric_sparse(const char*, int*, int*, int*, double**, int**, int**)’:
+src/caffe/util/mmio.cpp:77:56: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+                                                        ^
