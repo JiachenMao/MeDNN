@@ -114,6 +114,8 @@
     /usr/local/cuda/include/sm_32_intrinsics.h \
     /usr/local/cuda/include/sm_32_intrinsics.hpp \
     /usr/local/cuda/include/sm_35_intrinsics.h \
+    /usr/local/cuda/include/sm_61_intrinsics.h \
+    /usr/local/cuda/include/sm_61_intrinsics.hpp \
     /usr/local/cuda/include/surface_functions.h \
     /usr/local/cuda/include/texture_fetch_functions.h \
     /usr/local/cuda/include/texture_indirect_functions.h \

@@ -1,18 +1,33 @@
-net: "./vgg16_group_lasso.prototxt"
+net: "./train_val.prototxt"
 
 
-test_iter: 2
-test_interval: 834
-base_lr: 0.01
-display: 104
-max_iter: 25020
+test_iter: 20
+test_interval: 1000
+# learning rate should be 10 times smaller than original value
+base_lr: 0.00005  
+display: 1000
+max_iter: 250000
 lr_policy: "step"
-gamma: 0.1
+gamma: 0.001
 momentum: 0.9
-weight_decay: 0.0001
-stepsize: 8257
-snapshot: 834
-snapshot_prefix: "./models/snapshot"
+#weight_decay: 0.0005
+weight_decay: 0.001
+stepsize: 10000
+snapshot: 5000
+snapshot_prefix: "./models/group_lassoo_11_12_"
 solver_mode: GPU
 solver_type: SGD
+#update the weight every iter_size*batch_size images
 iter_size: 2
+
+#group lasso along row (filter-wise)
+#kernel_shape_decay: 0.0005
+kernel_shape_decay: 0.01
+
+
+#group lasso along columns (channel-wise)
+breadth_decay: 0.01
+
+#special_shape_decay: 0.0005
+#special_shape_decay: 0.001
+#group lasso along columns and rows

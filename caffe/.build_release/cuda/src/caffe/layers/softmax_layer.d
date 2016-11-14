@@ -114,6 +114,8 @@
     /usr/local/cuda/include/sm_32_intrinsics.h \
     /usr/local/cuda/include/sm_32_intrinsics.hpp \
     /usr/local/cuda/include/sm_35_intrinsics.h \
+    /usr/local/cuda/include/sm_61_intrinsics.h \
+    /usr/local/cuda/include/sm_61_intrinsics.hpp \
     /usr/local/cuda/include/surface_functions.h \
     /usr/local/cuda/include/texture_fetch_functions.h \
     /usr/local/cuda/include/texture_indirect_functions.h \
@@ -159,6 +161,9 @@
     /usr/local/cuda/include/thrust/detail/config/simple_defines.h \
     /usr/local/cuda/include/thrust/detail/config/compiler.h \
     /usr/local/cuda/include/cuda.h \
+    /usr/lib/gcc/x86_64-linux-gnu/5/include/stdint.h \
+    /usr/include/stdint.h \
+    /usr/include/x86_64-linux-gnu/bits/wchar.h \
     /usr/local/cuda/include/thrust/detail/config/host_system.h \
     /usr/local/cuda/include/thrust/detail/config/device_system.h \
     /usr/local/cuda/include/thrust/detail/config/host_device.h \
@@ -183,7 +188,6 @@
     /usr/include/c++/5/bits/stringfwd.h \
     /usr/include/c++/5/bits/postypes.h \
     /usr/include/c++/5/cwchar \
-    /usr/include/x86_64-linux-gnu/bits/wchar.h \
     /usr/include/x86_64-linux-gnu/bits/wchar2.h \
     /usr/include/c++/5/bits/char_traits.h \
     /usr/include/c++/5/bits/localefwd.h \
@@ -338,8 +342,6 @@
     /usr/local/cuda/include/thrust/system/cuda/detail/bulk/detail/synchronize.hpp \
     /usr/local/cuda/include/thrust/system/cuda/detail/bulk/async.hpp \
     /usr/local/cuda/include/thrust/detail/cstdint.h \
-    /usr/lib/gcc/x86_64-linux-gnu/5/include/stdint.h \
-    /usr/include/stdint.h \
     /usr/local/cuda/include/thrust/system/cuda/detail/bulk/detail/async.inl \
     /usr/local/cuda/include/thrust/system/cuda/detail/bulk/algorithm.hpp \
     /usr/local/cuda/include/thrust/system/cuda/detail/bulk/algorithm/copy.hpp \
@@ -462,6 +464,7 @@
     /usr/local/cuda/include/thrust/system/detail/adl/generate.h \
     /usr/local/cuda/include/thrust/system/detail/sequential/generate.h \
     /usr/local/cuda/include/thrust/system/cpp/detail/generate.h \
+    /usr/local/cuda/include/thrust/system/cuda/detail/generate.h \
     /usr/local/cuda/include/thrust/system/detail/adl/fill.h \
     /usr/local/cuda/include/thrust/system/detail/sequential/fill.h \
     /usr/local/cuda/include/thrust/system/cuda/detail/fill.h \
@@ -479,6 +482,8 @@
     /usr/local/cuda/include/thrust/system/detail/generic/temporary_buffer.inl \
     /usr/local/cuda/include/thrust/system/detail/adl/temporary_buffer.h \
     /usr/local/cuda/include/thrust/system/detail/sequential/temporary_buffer.h \
+    /usr/local/cuda/include/thrust/system/cpp/detail/temporary_buffer.h \
+    /usr/local/cuda/include/thrust/system/cuda/detail/temporary_buffer.h \
     /usr/local/cuda/include/thrust/detail/allocator/temporary_allocator.inl \
     /usr/include/c++/5/cassert \
     /usr/local/cuda/include/thrust/system/cuda/detail/terminate.h \
@@ -541,6 +546,7 @@
     /usr/local/cuda/include/thrust/system/detail/generic/scatter.inl \
     /usr/local/cuda/include/thrust/system/detail/adl/scatter.h \
     /usr/local/cuda/include/thrust/system/detail/sequential/scatter.h \
+    /usr/local/cuda/include/thrust/system/cuda/detail/scatter.h \
     /usr/local/cuda/include/thrust/scan.h \
     /usr/local/cuda/include/thrust/detail/scan.inl \
     /usr/local/cuda/include/thrust/system/detail/generic/scan.h \

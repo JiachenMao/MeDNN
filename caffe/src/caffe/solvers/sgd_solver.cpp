@@ -452,10 +452,13 @@ Dtype SGDSolver<Dtype>::GetGroupSparsity(int param_id, int filter_side_size) {
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
   int column = net_params[param_id]->count()/net_params[param_id]->shape(0);
   int row = net_params[param_id]->shape(0);
+  if(row<=1||column<=1){
+    return -1;
+  }
   int index = 0;
   int total_lines = 0;
   int all_zero_lines = 0;
-  while(index<(column-1)){
+  while(index<(column-9)){
     bool all_zero_123 = true;
     bool all_zero_789 = true;  //flag to exam the sparsity of different positions
     bool all_zero_147 = true;
@@ -503,6 +506,10 @@ Dtype SGDSolver<Dtype>::GetGroupSparsity(int param_id, int filter_side_size) {
     }
     total_lines+=4;
     index+=filter_side_size*filter_side_size;
+  }
+  if(total_lines==0)
+  {
+    return 0;
   }
   return Dtype(100)*Dtype(all_zero_lines)/Dtype(total_lines);
 }

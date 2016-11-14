@@ -162,6 +162,7 @@ NONEMPTY_WARN_REPORT := $(BUILD_DIR)/$(WARNS_EXT)
 ##############################
 # Derive include and lib directories
 ##############################
+#CUDA_DIR := "/usr/local/cuda-8.0/targets/x86_64-linux"
 CUDA_INCLUDE_DIR := $(CUDA_DIR)/include
 
 CUDA_LIB_DIR :=
