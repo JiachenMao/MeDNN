@@ -412,10 +412,11 @@ __global__ void row_group_lasso_kernel(const int n, const int c, const Dtype *x,
 		}
 }
 
-//Usage: dim3 block(c/3,1); dim3 thread(1,n); 
+//Usage: dim3 block(c/(spacial_height*spacial_height),1); dim3 thread(1,n); 
 //Here,"3" means the smallest group lasso unit is 3(height=width=3) because we do a line at a time; 
 //ver_group_lasso_kernel<<<block,thread>>>(n,c,x,y) (added by mjc);
 //here 'ver' means, for a filter which height=width=3, the group lasso index is {1,4,7} and {3,6,9}
+/*
 template  <typename Dtype>
 __global__ void ver_group_lasso_kernel(const int n, const int c, const Dtype *x, Dtype* y){
 	int n_offset = 0;
@@ -482,10 +483,98 @@ __global__ void ver_group_lasso_kernel(const int n, const int c, const Dtype *x,
 	  	n_offset += blockDim.y;
 	}
 }
+*/
 
-//Usage: dim3 block(c/3,1); dim3 thread(1,n); (here,"3" means height or width of the filters); 
+template  <typename Dtype>
+__global__ void ver_group_lasso_kernel(const int n, const int c, const Dtype *x, Dtype* y, const int spacial_height){
+	int n_offset = 0;
+	//initialize y
+	int idx[121];
+	while(n_offset<n)
+	{
+		for(int i =0;i<spacial_height*spacial_height;++i)
+		{
+			idx[i] = (n_offset+threadIdx.y)*c+blockIdx.x*spacial_height*spacial_height+i;
+		}
+		if(n_offset+threadIdx.y < n){//BUG: THE N MUST BE MULTIPLE TIMES OF BLOCKDIM.Y IN CURRENT IMPLEMENTATION !!!
+			for(int i =0;i<spacial_height*spacial_height;++i)
+			{
+				y[idx[i]] = x[idx[i]]*x[idx[i]];
+			}
+		}
+		n_offset += blockDim.y;
+	}
+	__syncthreads();
+
+	//sum along spacial_height columns at a time 
+	n_offset=0;
+	Dtype res[11];
+	for(int i =0;i<spacial_height;++i)
+	{
+		res[i] = 0;
+	}
+	while(n_offset<n){
+		int len = (n_offset + blockDim.y)<n ? blockDim.y : (n-n_offset);//valid threads to process
+		while(len/2>0){
+			if(threadIdx.y<len/2){
+				//int idx1 = (n_offset+threadIdx.y)*gridDim.x+blockIdx.x;
+				//int idx2 = (n_offset+threadIdx.y+(len+1)/2)*gridDim.x+blockIdx.x;
+				for(int i =0;i<spacial_height*spacial_height;++i){
+					int idx1 = (n_offset+threadIdx.y)*c+blockIdx.x*spacial_height*spacial_height+i;
+					int idx2 = (n_offset+threadIdx.y+(len+1)/2)*c+blockIdx.x*spacial_height*spacial_height+i;
+					y[idx1] += y[idx2];
+				}
+			}
+			__syncthreads();
+			len=(len+1)/2;
+		}
+		for(int i =0;i<spacial_height;++i)
+		{
+			for(int j = 0;j<spacial_height;++j)
+			{
+				res[i]+=y[n_offset*c+blockIdx.x*spacial_height*spacial_height+j+i*spacial_height];
+			}
+		}
+		n_offset += blockDim.y;
+	}
+	__syncthreads();
+
+	//copy
+	n_offset=0;
+	while(n_offset<n){
+		for(int i =0;i<spacial_height;++i)
+		{
+			for(int j = 0;j<spacial_height;++j)
+			{
+				idx[i*spacial_height+j] = (n_offset+threadIdx.y)*c + blockIdx.x*spacial_height*spacial_height+i*spacial_height+j;
+			}
+		}
+		if(n_offset+threadIdx.y < n){
+			for(int i =0;i<spacial_height;++i)
+			{
+				if(res[i]){
+					for(int j =0;j<spacial_height;++j)
+					{
+						y[idx[i*spacial_height+j]] = Dtype(sqrt(res[i]));
+					}
+				}else{
+					for(int j =0;j<spacial_height;++j)
+					{
+						y[idx[i*spacial_height+j]] = Dtype(0);
+					}
+				}
+			}
+		}
+	  	n_offset += blockDim.y;
+	}
+}
+
+
+
+//Usage: dim3 block(c/(spcail_height*spacial_height),1); dim3 thread(1,n); (here,"3" means height or width of the filters); 
 //hor_group_lasso_kernel<<<block,thread>>>(n,c,x,y) (added by mjc);
 //here 'hor' means, for a filter which height=width=3, the group lasso index is {1,2,3} and {7,8,9}
+/*
 template  <typename Dtype>
 __global__ void hor_group_lasso_kernel(const int n, const int c, const Dtype *x, Dtype* y){
 	int n_offset = 0;
@@ -591,7 +680,91 @@ __global__ void hor_group_lasso_kernel(const int n, const int c, const Dtype *x,
 	  	n_offset += blockDim.y;
 	}
 }
+*/
 
+template  <typename Dtype>
+__global__ void hor_group_lasso_kernel(const int n, const int c, const Dtype *x, Dtype* y,const int spacial_height){
+	int n_offset = 0;
+	//initialize y
+	int idx[121];
+	while(n_offset<n)
+	{
+		for(int i =0;i<spacial_height*spacial_height;++i)
+		{
+			idx[i] = (n_offset+threadIdx.y)*c+blockIdx.x*spacial_height*spacial_height+i;
+		}
+		if(n_offset+threadIdx.y < n){//BUG: THE N MUST BE MULTIPLE TIMES OF BLOCKDIM.Y IN CURRENT IMPLEMENTATION !!!
+			for(int i =0;i<spacial_height*spacial_height;++i)
+			{
+				y[idx[i]] = x[idx[i]]*x[idx[i]];
+			}
+		}
+		n_offset += blockDim.y;
+	}
+	__syncthreads();
+
+	//sum along spacial_height columns at a time 
+	n_offset=0;
+	Dtype res[11];
+	for(int i =0;i<spacial_height;++i)
+	{
+		res[i] = 0;
+	}
+	while(n_offset<n){
+		int len = (n_offset + blockDim.y)<n ? blockDim.y : (n-n_offset);//valid threads to process
+		while(len/2>0){
+			if(threadIdx.y<len/2){
+				//int idx1 = (n_offset+threadIdx.y)*gridDim.x+blockIdx.x;
+				//int idx2 = (n_offset+threadIdx.y+(len+1)/2)*gridDim.x+blockIdx.x;
+				for(int i =0;i<spacial_height*spacial_height;++i){
+					int idx1 = (n_offset+threadIdx.y)*c+blockIdx.x*spacial_height*spacial_height+i;
+					int idx2 = (n_offset+threadIdx.y+(len+1)/2)*c+blockIdx.x*spacial_height*spacial_height+i;
+					y[idx1] += y[idx2];
+				}
+			}
+			__syncthreads();
+			len=(len+1)/2;
+		}
+		for(int i =0;i<spacial_height;++i)
+		{
+			for(int j = 0;j<spacial_height;++j)
+			{
+				res[i]+=y[n_offset*c+blockIdx.x*spacial_height*spacial_height+j*spacial_height+i];
+			}
+		}
+		n_offset += blockDim.y;
+	}
+	__syncthreads();
+
+	//copy
+	n_offset=0;
+	while(n_offset<n){
+		for(int i =0;i<spacial_height;++i)
+		{
+			for(int j = 0;j<spacial_height;++j)
+			{
+				idx[i*spacial_height+j] = (n_offset+threadIdx.y)*c + blockIdx.x*spacial_height*spacial_height+i+j*spacial_height;
+			}
+		}
+		if(n_offset+threadIdx.y < n){
+			for(int i =0;i<spacial_height;++i)
+			{
+				if(res[i]){
+					for(int j =0;j<spacial_height;++j)
+					{
+						y[idx[i*spacial_height+j]] = Dtype(sqrt(res[i]));
+					}
+				}else{
+					for(int j =0;j<spacial_height;++j)
+					{
+						y[idx[i*spacial_height+j]] = Dtype(0);
+					}
+				}
+			}
+		}
+	  	n_offset += blockDim.y;
+	}
+}
 
 #define XOFFSET(idx) ((idx)%blk_size_c)
 #define YOFFSET(idx) ((idx)/blk_size_c)
@@ -723,45 +896,45 @@ void caffe_gpu_bar_group_lasso<double>(const int n, const int c, const double* x
 }
 
 template <>
-void caffe_gpu_special_shape_group_lasso<int>(const int n, const int c, const int* x, int* y, bool along_horizontal_or_vertical){
+void caffe_gpu_special_shape_group_lasso<int>(const int n, const int c, const int* x, int* y, const int spacial_height, bool along_horizontal_or_vertical){
 	NOT_IMPLEMENTED;
 }
 
 template <>
-void caffe_gpu_special_shape_group_lasso<unsigned int>(const int n, const int c, const unsigned int* x, unsigned int* y, bool along_horizontal_or_vertical){
+void caffe_gpu_special_shape_group_lasso<unsigned int>(const int n, const int c, const unsigned int* x, unsigned int* y, const int spacial_height, bool along_horizontal_or_vertical){
 	NOT_IMPLEMENTED;
 }
 
 template <>
-void caffe_gpu_special_shape_group_lasso<float>(const int n, const int c, const float* x, float* y, bool along_horizontal_or_vertical){
-	//'true' means vertical.  'false' means horizontal
+void caffe_gpu_special_shape_group_lasso<float>(const int n, const int c, const float* x, float* y, const int spacial_height, bool along_horizontal_or_vertical){
+	//'false' means vertical.  'true' means horizontal
 	int threads_per_block = Caffe::get_threads_per_block();
 	//LOG(INFO)<<"threads_per_block "<<threads_per_block;
 	if(along_horizontal_or_vertical){
-		dim3 block(c/3,1);
+		dim3 block(c/(spacial_height*spacial_height),1);
 		dim3 thread(1,n>threads_per_block ? threads_per_block:n );//CAFFE_CUDA_NUM_THREADS
-		ver_group_lasso_kernel<<<block,thread>>>(n,c,x,y);
+		hor_group_lasso_kernel<<<block,thread>>>(n,c,x,y,spacial_height);
 	}else{
-		dim3 block(c/3,1);
+		dim3 block(c/(spacial_height*spacial_height),1);
 		dim3 thread(1,n>threads_per_block ? threads_per_block:n );//CAFFE_CUDA_NUM_THREADS
-		hor_group_lasso_kernel<<<block,thread>>>(n,c,x,y);
+		ver_group_lasso_kernel<<<block,thread>>>(n,c,x,y,spacial_height);
 	}
 	CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
-void caffe_gpu_special_shape_group_lasso<double>(const int n, const int c, const double* x, double* y, bool along_horizontal_or_vertical){
-	//'true' means vertical.  'false' means horizontal
+void caffe_gpu_special_shape_group_lasso<double>(const int n, const int c, const double* x, double* y, const int spacial_height,bool along_horizontal_or_vertical){
+	//'false' means vertical.  'true' means horizontal
 	int threads_per_block = Caffe::get_threads_per_block();
 	//LOG(INFO)<<"threads_per_block "<<threads_per_block;
 	if(along_horizontal_or_vertical){
-		dim3 block(c/3,1);
+		dim3 block(c/(spacial_height*spacial_height),1);
 		dim3 thread(1,n>threads_per_block ? threads_per_block:n );//CAFFE_CUDA_NUM_THREADS
-		ver_group_lasso_kernel<<<block,thread>>>(n,c,x,y);
+		hor_group_lasso_kernel<<<block,thread>>>(n,c,x,y,spacial_height);
 	}else{
-		dim3 block(c/3,1);
+		dim3 block(c/(spacial_height*spacial_height),1);
 		dim3 thread(1,n>threads_per_block ? threads_per_block:n );//CAFFE_CUDA_NUM_THREADS
-		hor_group_lasso_kernel<<<block,thread>>>(n,c,x,y);
+		ver_group_lasso_kernel<<<block,thread>>>(n,c,x,y,spacial_height);
 	}
 	CUDA_POST_KERNEL_CHECK;
 }

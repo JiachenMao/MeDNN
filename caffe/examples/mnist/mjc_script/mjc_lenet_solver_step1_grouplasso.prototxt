@@ -5,7 +5,7 @@ net: "./mjc_lenet_layer_structure_step1_grouplasso.prototxt"
 # covering the full 10,000 testing images.
 test_iter: 100
 # Carry out testing every 500 training iterations.
-test_interval: 500
+test_interval: 100
 # The base learning rate, momentum and the weight decay of the network.
 base_lr: 0.01
 momentum: 0.9
@@ -27,11 +27,11 @@ solver_mode: GPU
 #block_group_decay: 0.001
 #group lasso along blocks
 
-breadth_decay: 0.001
+#breadth_decay: 0
 #group lasso along rows (kernel-wise)
 
-kernel_shape_decay: 0.001
+#kernel_shape_decay: 0.01
 #group lasso along columns (channel-wise)
 
-special_shape_decay: 0.002
+special_shape_decay: 0.1
 #group lasso along columns and rows

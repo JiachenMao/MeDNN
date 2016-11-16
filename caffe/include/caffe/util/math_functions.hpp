@@ -366,7 +366,7 @@ void caffe_gpu_bar_group_lasso(const int n, const int c, const Dtype *x, Dtype* 
 
 //get sqrt sum of weights within 3 bars(3 means the height or width of filteres)(column(true)/row(false)) and copy them at each position (added by mjc)
 template <typename Dtype>
-void caffe_gpu_special_shape_group_lasso(const int n, const int c, const Dtype *x, Dtype* y, bool along_column_or_row = true);
+void caffe_gpu_special_shape_group_lasso(const int n, const int c, const Dtype *x, Dtype* y, const int spacial_height, bool along_column_or_row = true);
 
 //get sqrt sum of weights within blocks and copy them at each position
 template <typename Dtype>

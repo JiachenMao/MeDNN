@@ -604,9 +604,13 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
-	//group lasso along columns (channels)
+	//group lasso along columns (shape-wise)
     if (if_learn_kernel_shape) {
-    	//LOG(INFO) << "mjc: group lasso along columns (channels)";
+    	// LOG(INFO) << "mjc: group lasso along columns (shape-wise)";
+     //  LOG(INFO) << "mjc: llllllllllllllll";
+     //  ostringstream msg;
+     //   msg << "mjc: group: " << net_param_groups[param_id]<<"\n";
+       //LOG(INFO) << msg.str();
     	int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
     	for (int g=0;g<net_param_groups[param_id];g++){
     		int offset = g*group_size*equivalent_ch;
@@ -625,8 +629,12 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 					net_params[param_id]->mutable_gpu_diff());
     }
 
-    //group lasso along rows (kernels)
+    //group lasso along rows (kernel-wises)
     if (if_learn_breadth) {
+      // LOG(INFO) << "mjc: llllllllllllllll";
+      // ostringstream msg;
+      //  msg << "mjc: group: " << net_param_groups[param_id]<<"\n";
+      //  LOG(INFO) << msg.str();
     	//LOG(INFO) << "mjc: group lasso along rows (kernels)";
 		int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		for (int g=0;g<net_param_groups[param_id];g++){
@@ -658,18 +666,29 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 	// msg <<"\n";
 	// msg <<"mjc net_param_groups[param_id] " << net_param_groups[param_id]<<"\n";
 	//group lasso along rows and column
+  // ostringstream msg;
+    // msg << "mjc: -------------: " << net_params[param_id]->shape(0)<<"\n";
+    // msg << "mjc: -------------: " << net_params[param_id]->shape(1)<<"\n"; //net_params[param_id]->shape(1) is the input channel
+    // msg << "mjc: -------------: " << net_params[param_id]->shape(2)<<"\n";//net_params[param_id]->shape(2) is the kernel height or width
+    // LOG(INFO) << msg.str();
     if (if_learn_special_shape) {
   //   	LOG(INFO) << "mjc: group lasso along rows and column in special way(jump) (horizontal)";
 		int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		//for (int g=0;g<net_param_groups[param_id];g++){
 			//int offset = g*group_size*equivalent_ch;
-		caffe_gpu_special_shape_group_lasso(group_size,
-				equivalent_ch,
-				net_params[param_id]->gpu_data(),
-				temp_[param_id]->mutable_gpu_data(), false);//get the group lasso denominator of each w, 'false' means horizontal.
-		Dtype term;
-		caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data(),&term);
-		regularization_term += (term/3)*local_special_shape_decay;
+    
+    for(int g=0; g<net_param_groups[param_id];g++)
+    {
+      int offset = g*group_size*equivalent_ch;
+      caffe_gpu_special_shape_group_lasso(group_size,
+        equivalent_ch,
+        net_params[param_id]->gpu_data()+offset,
+        temp_[param_id]->mutable_gpu_data()+offset, net_params[param_id]->shape(2), false);//get the group lasso denominator of each w, 'false' means horizontal.
+        Dtype term;
+        caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data()+offset,&term);
+        regularization_term += (term/3)*local_special_shape_decay;
+    }
+		
 		//}
 		caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
 		caffe_gpu_axpy(net_params[param_id]->count(),
@@ -681,13 +700,17 @@ Dtype SGDSolver<Dtype>::GroupLassoRegularize(int param_id) {
 		//int group_size = net_params[param_id]->shape(0)/net_param_groups[param_id];//number of kernels in each group
 		// for (int g=0;g<net_param_groups[param_id];g++){
 		// 	int offset = g*group_size*equivalent_ch;
-		caffe_gpu_special_shape_group_lasso(group_size,
-				equivalent_ch,
-				net_params[param_id]->gpu_data(),
-				temp_[param_id]->mutable_gpu_data(), true);//get the denominator of each w, 'true' means vertical
-		Dtype term2;
-		caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data(),&term2);
-		regularization_term += (term2/3)*local_special_shape_decay;
+    for(int g=0; g<net_param_groups[param_id];g++)
+    {
+      int offset = g*group_size*equivalent_ch;
+  		caffe_gpu_special_shape_group_lasso(group_size,
+  				equivalent_ch,
+  				net_params[param_id]->gpu_data()+offset,
+  				temp_[param_id]->mutable_gpu_data()+offset,net_params[param_id]->shape(2), true);//get the denominator of each w, 'true' means vertical
+  		Dtype term2;
+  		caffe_gpu_asum(equivalent_ch,temp_[param_id]->gpu_data()+offset,&term2);
+		  regularization_term += (term2/3)*local_special_shape_decay;
+    }
 		// }
 		caffe_gpu_div_checkzero(net_params[param_id]->count(), net_params[param_id]->gpu_data(), temp_[param_id]->gpu_data(), temp_[param_id]->mutable_gpu_data());
 		caffe_gpu_axpy(net_params[param_id]->count(),
