@@ -18,7 +18,7 @@ gamma: 0.1
 stepvalue: 300000
 stepvalue: 400000
 
-display: 100
+display: 500
 max_iter: 450000
 momentum: 0.9
 
@@ -46,10 +46,11 @@ momentum: 0.9
 
 weight_decay: 0
 kernel_shape_decay: 8.0e-4
+special_shape_decay: 8.0e-5
 breadth_decay: 3.0e-5
 
 regularization_type: "L1"
 
-snapshot: 5000
+snapshot: 2500
 snapshot_prefix: "models/lasso_1_"
 solver_mode: GPU
