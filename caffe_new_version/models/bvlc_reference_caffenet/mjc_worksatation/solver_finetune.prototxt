@@ -1,0 +1,62 @@
+net: "./train_val_finetune.prototxt"
+test_iter: 2000
+test_interval: 2000
+#base_lr: 0.01
+base_lr: 0.001
+#lr_policy: "step"
+#lr_policy: "multistep"
+gamma: 0.1
+#stepsize: 60000
+#stepsize: 80000
+#stepsize: 100000
+#stepvalue: 60000
+#stepvalue: 100000
+#stepvalue: 130000
+#stepvalue: 140000
+#stepvalue: 150000
+#stepvalue: 200000
+stepvalue: 60000
+stepvalue: 120000
+stepvalue: 140000
+max_iter: 150000
+lr_policy: "multistep"
+
+display: 2000
+momentum: 0.9
+
+#52.64% fine-tuned from caffenet
+#weight_decay: 0.0005
+#group_weight_decay: 1.5e-3
+
+#54.752% fine-tuned from 53.518% 0.5e-3 
+#weight_decay: 0.0
+#group_weight_decay: 0.5e-3
+
+# with L2, it converges slowly: fine-tuned from caffenet
+# weight_decay: 0.0005
+# group_weight_decay: 2.5e-4
+
+# Total regularization terms: 14.2714, 45% accuracy after 65000. used L1 to speed up convergence: fine-tuned from caffenet
+#weight_decay: 0
+#kernel_shape_decay: 8.0e-4
+#breadth_decay: 1.0e-3
+
+# Total regularization terms too large because of breadth_decay
+#weight_decay: 9.0e-5
+#kernel_shape_decay: 5.0e-4
+#breadth_decay: 5.0e-4
+
+#-------------------mjc:gpu1------------nov16
+#weight_decay: 0.00025
+#snapshot_prefix: "models/finetune_mjc_gpu1_"
+
+#-------------------mjc:gpu2------------nov16
+weight_decay: 0.00025
+snapshot_prefix: "models/finetune_mjc_gpu2_"
+
+
+
+#regularization_type: "L1"
+
+snapshot: 20000
+solver_mode: GPU
